@@ -4,23 +4,35 @@ import os
 import shutil
 from pathlib import Path
 
+# This script colorizes all the photos in the specified directory, using the deepAI colorizer machine learned API.
+#
+# To use, you must set the DL_API_KEY env variable to your deepAI API key.
+#
+# Example usage (on UNIX):
+# `export DL_API_KEY=<your-deep-ai-key> \ python3 main.py /path/to/images`
 
 home = str(Path.home())
 api_key = os.environ.get('DL_API_KEY')
 
+
+# Returns the directory passed to script as a string
 def get_directory():
 
     if len(sys.argv) != 2:
         raise ValueError('Please provide one directory as an argument.')
 
+    # argv[0] is the script name, argv[1] is the first argument
     image_dir = sys.argv[1]
 
+    # replace `~` with the path of the user's home directory to get the full path if necessary
     image_dir = image_dir.replace('~', home)
 
     print(f'Directory: {image_dir}')
+
     return image_dir
 
 
+# Returns the URL of the colorized photo. Takes in a path to a local file.
 def colorize_photo_local(path_to_file):
 
     r = requests.post(
@@ -34,6 +46,7 @@ def colorize_photo_local(path_to_file):
     return parse_request(r)
 
 
+# Returns the URL of the colorized photo. Takes in a URL to a black and white photo.
 def colorize_photo_url(url):
     r = requests.post(
         "https://api.deepai.org/api/colorizer",
@@ -46,10 +59,9 @@ def colorize_photo_url(url):
     return parse_request(r)
 
 
+# Returns the URL of the colorized photo from the returned request.
 def parse_request(r):
-    # print(r)
-    # print(r.status_code)
-    # print(r.json())
+    # Check that the image was colorized successfully
     if r.status_code != 200:
         raise Exception(f'Couldnt colorize photo! Status: {r.status_code} Json: {r.json()}')
 
@@ -57,6 +69,7 @@ def parse_request(r):
     return r.json()['output_url']
 
 
+# Downloads a photo from the specified URL. Saves it to the specified filepath.
 def download_photo_from_url(url, output_filepath):
     r = requests.get(url, stream=True)
 
@@ -71,12 +84,20 @@ def download_photo_from_url(url, output_filepath):
 
         print('Image sucessfully Downloaded: ', output_filepath)
     else:
-        print('Image Couldn\'t be retreived')
+        raise Exception('Image Couldn\'t be retreived')
+
+
+#  Indicates whether the filename is an image based on its extension.
+def has_image_extension(filename):
+    return filename.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp', '.gif'))
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    # Get the input directory argument
     input_dir = get_directory()
+
+    # Construct the output directory
     output_dir = f'{input_dir}-colorized'
     print(f'Outputting results to {output_dir}')
 
@@ -87,18 +108,23 @@ if __name__ == '__main__':
         os.mkdir(output_dir)
         print(f'Created output dir {output_dir}')
 
+    # Loop over all files in the input directory
     i = 0
     for root, directories, files in os.walk(input_dir):
         num_files = len(files)
 
         for name in files:
-            if name.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp', '.gif')):
+            if has_image_extension(name):
+                # Construct the full path to the image to colorize
                 input_file = os.path.join(root, name)
                 print(f'Processing {input_file} {i}/{num_files} : {i/num_files * 100}%')
-                # output_to = f'{output_dir}/{name}'
+
+                # Construct the full path to where the colorized image will be downloaded
                 output_to = f'{output_dir}/{name.split(".")[0]}.jpg'
                 print(f'Output to {output_to}')
 
+                # Check if the colorized image path exists. If it does, we've already colorized this image. So we
+                # skip it.
                 if os.path.exists(output_to):
                     print('File already exists. Skipping...')
                     i = i + 1
