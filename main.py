@@ -95,8 +95,14 @@ if __name__ == '__main__':
             if name.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp', '.gif')):
                 input_file = os.path.join(root, name)
                 print(f'Processing {input_file} {i}/{num_files} : {i/num_files * 100}%')
-                output_to = f'{output_dir}/{name}'
+                # output_to = f'{output_dir}/{name}'
+                output_to = f'{output_dir}/{name.split(".")[0]}.jpg'
                 print(f'Output to {output_to}')
+
+                if os.path.exists(output_to):
+                    print('File already exists. Skipping...')
+                    i = i + 1
+                    continue
 
                 try:
                     output_url = colorize_photo_local(input_file)
