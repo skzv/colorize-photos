@@ -117,7 +117,7 @@ if __name__ == '__main__':
             if has_image_extension(name):
                 # Construct the full path to the image to colorize
                 input_file = os.path.join(root, name)
-                print(f'Processing {input_file} {i}/{num_files} : {i/num_files * 100}%')
+                print(f'Processing {input_file} {i}/{num_files} : {i/num_files * 100:.2f}%')
 
                 # Construct the full path to where the colorized image will be downloaded
                 output_to = f'{output_dir}/{name.split(".")[0]}.jpg'
@@ -137,4 +137,4 @@ if __name__ == '__main__':
                     print('Error!', err)
                     print('Skipping file...')
 
-                i = i + 1
+            i = i + 1
